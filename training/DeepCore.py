@@ -97,7 +97,7 @@ jetNum=0# number of jets in the input. will be filled with local input informati
 jetNum_validation = 0# number of jets in the input. will be filled with local input information
 jetDim=30 #dimension of window on the pixed detector layer (cannot be changed without chaning the training sample)
 overlapNum =3 #numer of overlap considered (cannot be changed without chaning the training sample)
-layNum = 7 ## 4 for barrel, for endcap use layNum = 7 #4 barrel+3 endcap. the numeration is 1-4 for barrel, 5-7 for endcap (cannot be changed without chaning the training sample).
+layNum = 4 ## 4 for barrel, for endcap use layNum = 7 #4 barrel+3 endcap. the numeration is 1-4 for barrel, 5-7 for endcap (cannot be changed without chaning the training sample).
 parNum=5 #number of track parameters (cannot be changed without chaning the training sample)
 _Epsilon = 1e-7 #value needed for the loss functione valuation
 inputModuleName= "DeepCoreNtuplizerTest" ## demo" ##"DeepCoreNtuplizerTest"
@@ -500,6 +500,8 @@ if(LOCAL_INPUT) : #loaded the local input
     tree = tfile[inputModuleName][inputTreeName]
     ##print(tree)
     input_ = tree.array("cluster_measured")
+    ## added this line to read only LayNum layers instead of all layer
+    input_ = input_[:,:,:,0:layNum]
     input_jeta = tree.array("jet_eta")
     input_jpt = tree.array("jet_pt")
     if(not ON_DATA):
@@ -753,7 +755,8 @@ if PREDICT :
     if not TRAIN : #must be loaded previously produced weights, otherwise if you predict on the same sample of the training not needed
         #Barrel training (used in presentation, CMSSW PR...)
         ## model.load_weights('data/DeepCore_barrel_weights.246-0.87.hdf5')
-        model.load_weights('/storage/local/data1/gpuscratch/hichemb/Training0302/DeepCore_train_0302_252.h5')
+        ## model.load_weights('/storage/local/data1/gpuscratch/hichemb/Training0302/DeepCore_train_0302_252.h5')
+        model.load_weights('/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Training0614/DeepCore_train_0614.h5')
         #EndCap training, last weights (not satisfactory, consider to restart)      
         # model.load_weights('DeepCore_ENDCAP_train_ep150.h5')
         #model.load_weights('DeepCore_train_ev{ev}_ep{ep}.h5'.format(ev=jetNum,ep=epochs+start_epoch)) 
