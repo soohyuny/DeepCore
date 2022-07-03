@@ -10,6 +10,7 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import clip_ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import nn
+##import pdb ## for debug stuff
 
 ##
 keras = tf.keras
@@ -121,7 +122,7 @@ jetNum=0# number of jets in the input. will be filled with local input informati
 jetNum_validation = 0# number of jets in the input. will be filled with local input information
 jetDim=30 #dimension of window on the pixed detector layer (cannot be changed without chaning the training sample)
 overlapNum =3 #numer of overlap considered (cannot be changed without chaning the training sample)
-layNum = 7 ## 4 for barrel, for endcap use layNum = 7 #4 barrel+3 endcap. the numeration is 1-4 for barrel, 5-7 for endcap (cannot be changed without chaning the training sample).
+layNum = 4 ## 4 for barrel, for endcap use layNum = 7 #4 barrel+3 endcap. the numeration is 1-4 for barrel, 5-7 for endcap (cannot be changed without chaning the training sample).
 parNum=5 #number of track parameters (cannot be changed without chaning the training sample)
 _Epsilon = 1e-7 #value needed for the loss functione valuation
 inputModuleName= "DeepCoreNtuplizerTest" ## demo" ##"DeepCoreNtuplizerTest"
@@ -315,8 +316,9 @@ def loss_ROI_crossentropy(target, output):
     output = output[:,:,:,:,:-1]
     output = math_ops.log(output / (1 - output))
     retval = nn.weighted_cross_entropy_with_logits(targets=target, logits=output, pos_weight=10)#900=works #2900=200x200, 125=30x30
-    retval = retval*wei
-    return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None)+0.00001) #0.00001 needed to avoid numeric issue
+    #retval = retval*wei
+    #return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None)+0.00001) #0.00001 needed to avoid numeric issue
+    return tf.reduce_sum(retval, axis=None)
 
 #loss function for probability, used in the last part of the training (difference: non-zero weight to pixel far from crossing point)
 def loss_ROIsoft_crossentropy(target, output):
@@ -383,7 +385,9 @@ def Generator2(filepath,batch_size=0,count=False):
                     target_prob = np.reshape(chunk["trackProb"], (nev,jetDim,jetDim,overlapNum,1))
 
                     target_prob = concatenatenp([target_prob,chunk["trackPar"][:,:,:,:,-1:]],axis=4)
-                    yield [chunk["cluster_measured"],chunk["jet_eta"],chunk["jet_pt"]],[chunk["trackPar"],target_prob]
+                    ## debug
+                    ##pdb.set_trace()
+                    yield [chunk['cluster_measured'][:,:,:,0:layNum],chunk["jet_eta"],chunk["jet_pt"]],[chunk["trackPar"],target_prob]
         if count:
             break
 
@@ -581,8 +585,8 @@ else :  #loaded the central input
     #files=glob.glob('/storage/local/data1/gpuscratch/hichemb/Training0217/TrainingSamples/training/DeepCoreTrainingSample*.root')
     #files_validation=glob.glob('/storage/local/data1/gpuscratch/hichemb/Training0217/TrainingSamples/validation/DeepCoreTrainingSample*.root')
     #Generator2 approach
-    trainingpath = "/storage/local/data1/gpuscratch/hichemb/DeepCore_Training/TrainingSamples/training/DeepCoreTrainingSample_*.root"
-    validationpath = "/storage/local/data1/gpuscratch/hichemb/DeepCore_Training/TrainingSamples/validation/DeepCoreTrainingSample_*.root"
+    trainingpath = "/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore_Training/TrainingSamples/training/DeepCoreTrainingSample_*.root"
+    validationpath = "/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore_Training/TrainingSamples/validation/DeepCoreTrainingSample_*.root"
     
     #GPU3 training/validation files
     #trainingpath = "/storage/local/data1/gpuscratch/njh/Training0217/training/DeepCoreTrainingSample_*.root:DeepCoreNtuplizerTest/DeepCoreNtuplizerTree;"
@@ -674,7 +678,7 @@ if TRAIN or PREDICT :
     reshaped_prob = Reshape((jetDim,jetDim,overlapNum,2))(conv1_3_1)
 
     model = Model([NNinputs,NNinputs_jeta,NNinputs_jpt],[reshaped,reshaped_prob])
-    anubi = keras.optimizers.Adam(learning_rate=0.00000001)#after epochs 252 (with septs/20 and batch_size 64)
+    anubi = keras.optimizers.Adam(learning_rate=0.00001)#after epochs 252 (with septs/20 and batch_size 64)
 
     #model.compile(optimizer=anubi, loss=[loss_mse_select_clipped,loss_ROIsoft_crossentropy], loss_weights=[1,1]) #FOR LATE TRAINING
     model.compile(optimizer=anubi, loss=[loss_mse_select_clipped,loss_ROI_crossentropy], loss_weights=[1,1]) #FOR EARLY TRAINING
@@ -751,8 +755,8 @@ if TRAIN :
         ## chaning steps_per_epoch=stepNum/20 to steps_per_epoch=stepNum
         #history = model.fit_generator(generator=Generator(files),steps_per_epoch=stepNum, epochs=epochs+start_epoch, verbose = 2, max_queue_size=1, validation_data=Generator(files_validation),  validation_steps=jetNum_validation/batch_
         ## Adjust step size between trainings: if step size = 1/20 then inverse_step_size = 20
-        inverse_step_size = 1
-        val_inverse_step_size = 1
+        inverse_step_size = 20
+        val_inverse_step_size = 20
         history = model.fit(Generator2(trainingpath,batch_size),steps_per_epoch=int(stepNum/inverse_step_size),epochs=start_epoch+args.Epochs,verbose=2,max_queue_size=1,validation_data=Generator2(validationpath,batch_size),validation_steps=int(jetNum_validation/(val_inverse_step_size*batch_size)), initial_epoch=start_epoch, callbacks=[checkpointer])
         print("done running; now save")
         
