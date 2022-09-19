@@ -316,9 +316,8 @@ def loss_ROI_crossentropy(target, output):
     output = output[:,:,:,:,:-1]
     output = math_ops.log(output / (1 - output))
     retval = nn.weighted_cross_entropy_with_logits(targets=target, logits=output, pos_weight=10)#900=works #2900=200x200, 125=30x30
-    #retval = retval*wei
-    #return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None)+0.00001) #0.00001 needed to avoid numeric issue
-    return tf.reduce_sum(retval, axis=None)
+    retval = retval*wei
+    return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None)+0.00001) #0.00001 needed to avoid numeric issue
 
 #loss function for probability, used in the last part of the training (difference: non-zero weight to pixel far from crossing point)
 def loss_ROIsoft_crossentropy(target, output):
@@ -330,7 +329,9 @@ def loss_ROIsoft_crossentropy(target, output):
     output = math_ops.log(output / (1 - output))
     retval = nn.weighted_cross_entropy_with_logits(targets=target, logits=output, pos_weight=10)#900=works #2900=200x200, 125=30x30
     retval = retval*(wei+0.01) # here the difference
-    return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None)+0.00001)
+    ## return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None)+0.00001)
+    ## ROIsoft fix 2
+    return tf.reduce_sum(retval,axis=None)/(tf.reduce_sum((wei+0.01),axis=None))
 
 #loss for track parameter
 def loss_mse_select_clipped(y_true, y_pred) :
