@@ -110,7 +110,11 @@ batch_size = 64 # Batch size for training.
 epochs = 30 # Number of epochs to train for.
 start_epoch = 0 #starting epoch, to restart with proper numbering used when CONTINUE_TRAINING=True
 valSplit=0.2 # fraction of input used for validation
-prob_thr =0.85 # threshold to identfy good prediciton (see DeepCore documentation to details)
+
+# threshold to identify good prediction, need to be adjusted as needed
+#prob_thr =0.85 # Run 2 
+#prob_thr =0.36 # T0628
+prob_thr =0.32 # T1017
 
 #plotting configuration
 numPrint =5 #number of event saved in the root file
@@ -286,6 +290,7 @@ def loss_ROI_crossentropy(target, output):
     retval = retval*wei
     return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None)+0.00001) #0.00001 needed to avoid numeric issue
 
+
 #loss function for probability, used in the last part of the training (difference: non-zero weight to pixel far from crossing point)
 def loss_ROIsoft_crossentropy(target, output):
     epsilon_ = _to_tensor(keras.backend.epsilon(), output.dtype.base_dtype)
@@ -296,9 +301,12 @@ def loss_ROIsoft_crossentropy(target, output):
     output = math_ops.log(output / (1 - output))
     retval = nn.weighted_cross_entropy_with_logits(targets=target, logits=output, pos_weight=10)#900=works #2900=200x200, 125=30x30
     retval = retval*(wei+0.01) # here the difference
-    ##return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None))
-    ## ROI soft 2 fix
-    return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum((wei+0.01),axis=None))
+    ## ROIsoft: does not work since denominator goes to 0 sometimes 
+    ## return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None))
+    ## ROIsoft fix 1
+    ## return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None)+0.00001)
+    ## ROIsoft fix 2
+    return tf.reduce_sum(retval,axis=None)/(tf.reduce_sum((wei+0.01),axis=None))
 
 #loss for track parameter
 def loss_mse_select_clipped(y_true, y_pred) :
@@ -306,6 +314,7 @@ def loss_mse_select_clipped(y_true, y_pred) :
     pred = y_pred[:,:,:,:,:-1]
     true =  y_true[:,:,:,:,:-1]
     out =K.square(tf.clip_by_value(pred-true,-5,5))*wei
+    # Clipping at 5 since all our param should be in the [-5, 5] range 
     return tf.reduce_sum(out, axis=None)/(tf.reduce_sum(wei,axis=None)*5+0.00001) #5=parNum
 
 # Generator used to load all the input file in the LOCAL_INPUT=False workflow
@@ -598,6 +607,8 @@ if TRAIN or PREDICT :
     conv15_3_2 = Conv2D(18,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_1)
     conv15_3_3 = Conv2D(18,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_2) #(12,3)
     conv15_3 = Conv2D(18,3, data_format="channels_last",padding="same")(conv15_3_3) #(12,3)
+    # T1023 architecture difference (last layer has 1x1 filter instead of 3x3
+    # conv15_3 = Conv2D(18,1, data_format="channels_last",padding="same")(conv15_1_1) #(12,1)
     reshaped = Reshape((jetDim,jetDim,overlapNum,parNum+1))(conv15_3)
 
     conv12_3_1 = Conv2D(12,3, data_format="channels_last", activation='relu', padding="same")(conv15_5)  #new
@@ -606,11 +617,48 @@ if TRAIN or PREDICT :
     conv1_3_1 = Conv2D(6,3, data_format="channels_last", activation='sigmoid', padding="same")(conv1_3_3)
     reshaped_prob = Reshape((jetDim,jetDim,overlapNum,2))(conv1_3_1)
 
+#############################################################################################################################
+
+ # T1017 and T1024 Architecture
+#    conv30_9 = Conv2D(50,7, data_format="channels_last", input_shape=(jetDim,jetDim,layNum+2), activation='relu',padding="same")(ComplInput)
+#    conv30_7 = Conv2D(40,5, data_format="channels_last", activation='relu',padding="same")(conv30_9)
+#    conv30_5 = Conv2D(40,5, data_format="channels_last", activation='relu',padding="same")(conv30_7)#
+#    conv20_5 = Conv2D(30,5, data_format="channels_last", activation='relu',padding="same")(conv30_5)
+#    conv15_5 = Conv2D(30,3, data_format="channels_last", activation='relu',padding="same")(conv20_5)
+
+#    conv15_3_1 = Conv2D(30,3, data_format="channels_last",activation='relu', padding="same")(conv15_5)
+#    conv15_3_2 = Conv2D(30,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_1)
+#    conv15_3_3 = Conv2D(30,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_2) #(12,3)
+#    conv15_3 = Conv2D(18,3, data_format="channels_last",padding="same")(conv15_3_3) #(12,3)
+#    reshaped = Reshape((jetDim,jetDim,overlapNum,parNum+1))(conv15_3)
+
+#    conv12_3_1 = Conv2D(30,3, data_format="channels_last", activation='relu', padding="same")(conv15_5)  #new
+#    conv1_3_2 = Conv2D(25,3, data_format="channels_last", activation='relu', padding="same")(conv12_3_1) #drop7lb   #new
+#    conv1_3_3 = Conv2D(20,3, data_format="channels_last", activation='relu',padding="same")(conv1_3_2) #new
+#    conv1_3_1 = Conv2D(6,3, data_format="channels_last", activation='sigmoid', padding="same")(conv1_3_3)
+#    reshaped_prob = Reshape((jetDim,jetDim,overlapNum,2))(conv1_3_1)
+#######################################################################################################################
+
+
     model = Model([NNinputs,NNinputs_jeta,NNinputs_jpt],[reshaped,reshaped_prob])
     
-    anubi = keras.optimizers.Adam(lr=0.00000001)#after epochs 252 (with septs/20 and batch_size 64)
+    # Made it easier to adjust learning rate
+    #anubi = keras.optimizers.Adam(learning_rate=0.00001)#after epochs 252 (with septs/20 and batch_size 64)
+    #Learning rate adjustments:
+    # anubi = keras.optimizers.Adam(lr=0.01)  #10-2
+    # anubi = keras.optimizers.Adam(lr=0.001)  #10-3
+    # anubi = keras.optimizers.Adam(lr=0.0001)  #10-4
+    # anubi = keras.optimizers.Adam(lr=0.00001)  #10-5
+    # anubi = keras.optimizers.Adam(lr=0.000001)  #10-6
+    anubi = keras.optimizers.Adam(lr=0.0000001)  #10-7
+    # anubi = keras.optimizers.Adam(lr=0.00000001)  #10-8
+    
+    # Loss function adjustments:
+    # ROI
+    # model.compile(optimizer=anubi, loss=[loss_mse_select_clipped,loss_ROI_crossentropy], loss_weights=[1,1]) #FOR EARLY TRAINING
+    # ROIsoft
+    model.compile(optimizer=anubi, loss=[loss_mse_select_clipped,loss_ROIsoft_crossentropy], loss_weights=[1,1]) #FOR LATE TRAINING
 
-    model.compile(optimizer=anubi, loss=[loss_mse_select_clipped,loss_ROIsoft_crossentropy], loss_weights=[1,1])
     model.summary()
 
 
@@ -758,7 +806,7 @@ if PREDICT :
         #Barrel training (used in presentation, CMSSW PR...)
         ## model.load_weights('data/DeepCore_barrel_weights.246-0.87.hdf5')
         ## model.load_weights('/storage/local/data1/gpuscratch/hichemb/Training0302/DeepCore_train_0302_252.h5')
-        model.load_weights('/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Training0614/DeepCore_train_0614.h5')
+        model.load_weights('/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Training0628/DeepCore_train_1017.h5')
         #EndCap training, last weights (not satisfactory, consider to restart)      
         # model.load_weights('DeepCore_ENDCAP_train_ep150.h5')
         #model.load_weights('DeepCore_train_ev{ev}_ep{ep}.h5'.format(ev=jetNum,ep=epochs+start_epoch)) 
@@ -888,7 +936,12 @@ if OUTPUT :
                                 graphTargetTot[jet][3].SetPoint(tarPoint,x3,y3)
                                 tarPoint = tarPoint+1
                         if not DRAW_ONLY :
-                            if validation_prob[j_eff][x][y][trk] > (prob_thr-0.1*trk-brokenLay_cut) and lay==1 : #and   target_prob[j_eff][x][y][trk] == 1: #this is an useful option to debug
+                            # Run2 Threshold
+                            #if validation_prob[j_eff][x][y][trk] > (prob_thr-0.1*trk-brokenLay_cut) and lay==1 : #and   target_prob[j_eff][x][y][trk] == 1: #this is an useful option to debug
+                            # T0628 Threshold
+                            #if validation_prob[j_eff][x][y][trk]> (prob_thr-0.16*trk) and lay==1 : #and   target_prob[j_eff][x][y][trk] == 1: #this is an useful option to debug 
+                            # T1017 Threshold
+                            if validation_prob[j_eff][x][y][trk]> (prob_thr-0.14*trk) and lay==1 : #and   target_prob[j_eff][x][y][trk] == 1: #this is an useful option to debug
                                 xx_pr= float(validation_par[j_eff][x][y][trk][0])/float(0.01)*0.01
                                 yy_pr= float(validation_par[j_eff][x][y][trk][1])/float(0.015)*0.01
                                 graphPredTot[jet][lay].SetPoint(predPoint,x+xx_pr-jetDim/2,y+yy_pr-jetDim/2)
@@ -1122,9 +1175,20 @@ if OUTPUT :
                  for x in range(jetDim) :
                      for y in range(jetDim) :
                          for trk in range(overlapNum) :
-                             if target_prob[j_eff][x][y][trk] == 1 :
+                            # Plotting all true target
+                            #  if target_prob[j_eff][x][y][trk] == 1 :
+                            # Plotting true targets that DeepCore is reconstructing (signal only)
+                            # Run 2
                             #  if validation_prob[j_eff][x][y][trk] > prob_thr-0.1*trk-brokenLay_cut  and target_prob[j_eff][x][y][trk] == 1:# only "associated" 
-                                     if(par!=4) :
+                            # T0628
+                            #  if (validation_prob[j_eff][x][y][trk] > (prob_thr - 0.16*trk)) and (target_prob[j_eff][x][y][trk] == 1):# only "associated" 
+                            # T1017
+                              if (validation_prob[j_eff][x][y][trk] > (prob_thr - 0.14*trk)) and (target_prob[j_eff][x][y][trk] == 1):# only "associated" 
+                                     if((par==0) or (par ==1)) :
+                                         if not DRAW_ONLY: bins.append((validation_par[j_eff][x][y][trk][par] - target_[j_eff][x][y][trk][par])*100)
+                                         if not DRAW_ONLY : bins_pred.append(validation_par[j_eff][x][y][trk][par]*100)
+                                         bins_target.append(target_[j_eff][x][y][trk][par]*100)
+                                     elif((par==2) or (par ==3)) :
                                          if not DRAW_ONLY : bins.append((validation_par[j_eff][x][y][trk][par] - target_[j_eff][x][y][trk][par])*0.01)
                                          if not DRAW_ONLY : bins_pred.append(validation_par[j_eff][x][y][trk][par]*0.01)
                                          bins_target.append(target_[j_eff][x][y][trk][par]*0.01)
@@ -1142,8 +1206,10 @@ if OUTPUT :
                  fracsig = 0
              print("Parameter {PAR}, number of correct sign={n}, fraction={f}".format(PAR=par, n=n_sig_ok, f=fracsig))
              plt.figure()
-             if(par!=4) :
-                 pylab.hist(bins,70, facecolor='darkorange', alpha=0.75, range=(-0.03,0.03))
+             if((par== 0) or (par == 1)) :
+                 pylab.hist(bins,60, facecolor='darkorange',alpha=0.75,range=(-300,300))
+             elif((par== 2) or (par == 3)) :
+                 pylab.hist(bins,70, facecolor='darkorange', alpha=0.75,range=(-0.03,0.03))
              else :
                  pylab.hist(bins,200, facecolor='darkorange', alpha=0.75, range=(-2,5))#range=(-0.2,0.2))#range=(-2,5)) #relative
              if(par == 0) :
@@ -1163,17 +1229,17 @@ if OUTPUT :
                  
                  if not DRAW_ONLY : mean = np.array(bins).mean()
                  if not DRAW_ONLY : sigma = np.array(bins).std()
-                 if not DRAW_ONLY :  plt.text(0.009, 100000, "Mean =%f"%(mean), size=14)
-                 if not DRAW_ONLY : plt.text(0.0145, 150000, "$\sigma_{res}$ = %.3f"%(sigma), size=14)
+                 if not DRAW_ONLY :  plt.text(0.0009, 100000, "Mean =%f"%(mean), size=14)
+                 if not DRAW_ONLY : plt.text(0.00145, 150000, "$\sigma_{res}$ = %.3f"%(sigma), size=14)
 
              if(par == 3) :
                  pylab.title('Residual distribution - $\phi$',fontsize=22)
              if(par == 4) :
                  pylab.title('Residual distribution - $p_T$',fontsize=22)
-             pylab.ylabel('Events/0.0008',fontsize=18)
+             pylab.ylabel('Entries',fontsize=18)
              pylab.xlabel('(prediction-target)/target',fontsize=18) #only 1/pt
              if(par==0 or par==1) : #relative
-                 pylab.xlabel('prediction-target [cm]',fontsize=22)
+                 pylab.xlabel('prediction-target [$\mu$m]',fontsize=22)
              elif(par==2 or par==3) : #relative
                  pylab.xlabel('prediction-target',fontsize=22)
             #  else : #relative
@@ -1187,7 +1253,9 @@ if OUTPUT :
              pdf_par.savefig(bbox_inches='tight')
 
              plt.figure()
-             if(par!=4) :
+             if((par == 0) or (par ==1)) :
+                 pylab.hist(bins_target,80, facecolor='royalblue', alpha=0.75,range=(-400,400))
+             elif((par == 2) or (par ==3 )) :
                  pylab.hist(bins_target,80, facecolor='royalblue', alpha=0.75,range=(-0.04,0.04))
              else :
                  pylab.hist(bins_target,200, facecolor='royalblue', alpha=0.75, range=(-0.01,0.2))
@@ -1203,14 +1271,14 @@ if OUTPUT :
              if(par == 4) :
                  pylab.title('Target distribution - $p_T$',fontsize=22)
              if(par==0 or par==1) :
-                 pylab.xlabel('target [cm]',fontsize=18)
+                 pylab.xlabel('target [$\mu$m]',fontsize=18)
              elif(par==2 or par==3) :
                  pylab.xlabel('target',fontsize=18)
              else :
                  ##pylab.xlabel('prediction-target [1/GeV]',fontsize=18)
                  ## fixed to correct label
                  pylab.xlabel('Target [1/GeV]',fontsize=18)
-             pylab.ylabel('entries',fontsize=18)
+             pylab.ylabel('Entries',fontsize=18)
              plt.grid(True)
              if(RGB) :
                  pylab.savefig("target_{jj}_{PAR}.pdf".format(PAR=par,jj=jetNum), bbox_inches='tight')#.png
@@ -1219,7 +1287,9 @@ if OUTPUT :
              pdf_par.savefig(bbox_inches='tight')
 
              plt.figure()
-             if(par!=4) :
+             if((par == 0) or (par == 1)) :
+                 pylab.hist(bins_pred,80, facecolor='red', alpha=0.75,range=(-400,400))
+             elif((par == 2) or (par == 3)) :
                  pylab.hist(bins_pred,80, facecolor='red', alpha=0.75,range=(-0.04,0.04))
              else :
                  pylab.hist(bins_pred,200, facecolor='red', alpha=0.75, range=(-0.01,0.2))
@@ -1235,14 +1305,14 @@ if OUTPUT :
              if(par == 4) :
                  pylab.title('Prediction distribution - $p_T$',fontsize=22)
              if(par==0 or par==1) :
-                 pylab.xlabel('prediction [cm]',fontsize=18)
+                 pylab.xlabel('prediction [$\mu$m]',fontsize=18)
              elif(par==2 or par==3) :
                  pylab.xlabel('prediction',fontsize=18)
              else :
                  ##pylab.xlabel('prediction-target [1/GeV]',fontsize=18)
                  ## fixed to correct label
                  pylab.xlabel('prediction [1/GeV]',fontsize=18)
-             pylab.ylabel('entries',fontsize=18)
+             pylab.ylabel('Entries',fontsize=18)
              plt.grid(True)
              if(RGB) :
                  pylab.savefig("prediction_{jj}_{PAR}.pdf".format(PAR=par,jj=jetNum),bbox_inches='tight')#.png
@@ -1263,9 +1333,9 @@ if OUTPUT :
                    # plt.ylabel('x (prediction - target) [cm]')
                     
                     ## old scatter plot (target vs pred)
-                    plt.hist2d(bins_pred,bins_target,bins=100,range = [[-0.015,0.015], [-0.015, 0.015]], cmap=plt.cm.viridis)#, marker='+')
-                    plt.xlabel('x prediction [cm]', fontsize=18)
-                    plt.ylabel('x target [cm]', fontsize=18)
+                    plt.hist2d(bins_pred,bins_target,bins=300,range = [[-150,150], [-150, 150]], cmap=plt.cm.viridis)#, marker='+')
+                    plt.xlabel('x prediction [$\mu$m]', fontsize=18)
+                    plt.ylabel('x target [$\mu$m]', fontsize=18)
                     plt.colorbar()
                  if(par == 1) :
                     #bins_pred_minus_target = []
@@ -1277,9 +1347,9 @@ if OUTPUT :
                     #plt.ylabel('y (prediction - target) [cm]')
                     
                     ## old scatter plot (target vs pred)
-                    plt.hist2d(bins_pred,bins_target,bins=100,range = [[-0.015,0.015], [-0.015, 0.015]], cmap=plt.cm.viridis) 
-                    plt.xlabel('y prediction [cm]', fontsize=18)
-                    plt.ylabel('y target [cm]', fontsize=18)
+                    plt.hist2d(bins_pred,bins_target,bins=450,range = [[-225,225], [-225, 225]], cmap=plt.cm.viridis) 
+                    plt.xlabel('y prediction [$\mu$m]', fontsize=18)
+                    plt.ylabel('y target [$\mu$m]', fontsize=18)
                     plt.colorbar()
                  if(par == 2) :
                     #bins_pred_minus_target = []

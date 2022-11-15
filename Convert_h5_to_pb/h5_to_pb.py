@@ -53,9 +53,15 @@ from keras import backend as K
 from keras.models import load_model
 
 # adjust input file (h5) path here
-weight_file_path = '/storage/local/data1/gpuscratch/hichemb/pb_file/DeepCore_model_0302_252.h5'
+weight_file_path = '/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Convert_h5_to_pb/DeepCore_model_1017.h5'
 
 # defining loss functions
+
+# Valerio did not define epsilon in his script despite being used in the loss functions
+_Epsilon = 1e-7 #value needed for the loss functione valuation
+def epsilon():
+    return _Epsilon
+
 def _to_tensor(x, dtype):
     return ops.convert_to_tensor(x, dtype=dtype)
 
@@ -64,7 +70,10 @@ def loss_mse_select_clipped(y_true, y_pred) :
     pred = y_pred[:,:,:,:,:-1]
     true =  y_true[:,:,:,:,:-1]
     out =K.square(tf.clip_by_value(pred-true,-5,5))*wei
-    return tf.reduce_sum(out, axis=None)/(tf.reduce_sum(wei,axis=None)*4) #4=numPar
+  # Valerio here multplied denominator by 4 and does not add 0.00001, which is what he did during the training, so the loss function here is not defined correctly
+  # return tf.reduce_sum(out, axis=None)/(tf.reduce_sum(wei,axis=None)*4) #4=numPar
+  # Fixed
+  return tf.reduce_sum(out, axis=None)/(tf.reduce_sum(wei,axis=None)*5 + 0.00001) #4=numPar
 
 def loss_ROI_crossentropy(target, output):
     epsilon_ = _to_tensor(keras.backend.epsilon(), output.dtype.base_dtype)
@@ -76,10 +85,13 @@ def loss_ROI_crossentropy(target, output):
     # print("target shape=", target.shape, ", wei shape=", wei.shape, "output shape ", output.shape)
     output = output[:,:,:,:,:-1]
     output = math_ops.log(output / (1 - output))
-    retval = nn.weighted_cross_entropy_with_logits(targets=target, logits=output, pos_weight=10)#900=works #2900=200x200, 125=30x30
+    retval = nn.weighted_cross_entropy_with_logits(labels=target, logits=output, pos_weight=10)#900=works #2900=200x200, 125=30x30
     retval = retval*wei
     # print("output shape ", retval.shape)
-    return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None))
+    # ROI here will diverge since he did not add 0.00001 in denominator like he did in the training
+    # return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None))
+    # Fixed  
+    return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None) + 0.00001)
 
 def loss_ROIsoft_crossentropy(target, output):
     epsilon_ = _to_tensor(keras.backend.epsilon(), output.dtype.base_dtype)
@@ -91,13 +103,23 @@ def loss_ROIsoft_crossentropy(target, output):
     # print("target shape=", target.shape, ", wei shape=", wei.shape, "output shape ", output.shape)
     output = output[:,:,:,:,:-1]
     output = math_ops.log(output / (1 - output))
-    retval = nn.weighted_cross_entropy_with_logits(targets=target, logits=output, pos_weight=10)#900=works #2900=200x200, 125=30x30
+    retval = nn.weighted_cross_entropy_with_logits(labels=target, logits=output, pos_weight=10)#900=works #2900=200x200, 125=30x30
     retval = retval*(wei+0.01)
-    # print("output xentr ", retval)
-    return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None))
+    ## ROIsoft with Valerio's definition: does not work since denominator goes to 0 sometimes 
+    ## return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None))
+    ## ROIsoft fix 1
+    ## return tf.reduce_sum(retval, axis=None)/(tf.reduce_sum(wei,axis=None)+0.00001)
+    ## ROIsoft fix 2
+    return tf.reduce_sum(retval,axis=None)/(tf.reduce_sum((wei+0.01),axis=None))
 
 # Loading our model
-net_model = load_model(weight_file_path,custom_objects={'loss_mse_select_clipped':loss_mse_select_clipped,'loss_ROI_crossentropy':loss_ROI_crossentropy, '_to_tensor':_to_tensor})
+# This is what Valerio wrote, it's loading ROI instead of ROIsoft so it's
+# wrong, also it's not loading epsilon function
+# net_model = load_model(weight_file_path,custom_objects={'loss_mse_select_clipped':loss_mse_select_clipped,'loss_ROIsoft_crossentropy':loss_ROI_crossentropy, '_to_tensor':_to_tensor})
+# Fixed: if last loss function used is ROIsoft, use this
+net_model = load_model(weight_file_path,custom_objects={'loss_mse_select_clipped':loss_mse_select_clipped,'loss_ROIsoft_crossentropy':loss_ROIsoft_crossentropy, '_to_tensor':_to_tensor, 'epsilon': epsilon})
+# If last loss function used is ROI, use this
+# net_model = load_model(weight_file_path,custom_objects={'loss_mse_select_clipped':loss_mse_select_clipped,'loss_ROI_crossentropy':loss_ROI_crossentropy, '_to_tensor':_to_tensor, 'epsilon':epsilon})
 
 # renaming output nodes
 num_output = 2
@@ -116,8 +138,8 @@ outputs = pred_node_names
 # conversion here
 constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph.as_graph_def(), outputs)
 
-# adjust output file (pb) directory and name here
-tf.train.write_graph(constant_graph,"/storage/local/data1/gpuscratch/hichemb/pb_file/pb_mod/", "constantgraph.pb", as_text=False)
+# adjust output file (pb) directory and name here, you should rename it after
+tf.train.write_graph(constant_graph,"/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Convert_h5_to_pb/", "constantgraph.pb", as_text=False)
 
 
 print("saved pb file")
