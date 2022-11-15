@@ -4,7 +4,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 import sys
-import tensorflow.compat.v1 as tf
+#import tensorflow.compat.v1 as tf
+import tensorflow as tf # if not compatible use line above
 from tensorflow.python.platform import gfile
 
 # prints out output nodes of a given pb file
