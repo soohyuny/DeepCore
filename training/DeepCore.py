@@ -596,47 +596,47 @@ if TRAIN or PREDICT :
     ComplInput = concatenate([NNinputs,jetUps],axis=3)
     print("ComplInput=", ComplInput.shape)
 
-   
-    conv30_9 = Conv2D(50,7, data_format="channels_last", input_shape=(jetDim,jetDim,layNum+2), activation='relu',padding="same")(ComplInput)
-    conv30_7 = Conv2D(20,5, data_format="channels_last", activation='relu',padding="same")(conv30_9)
-    conv30_5 = Conv2D(20,5, data_format="channels_last", activation='relu',padding="same")(conv30_7)#
-    conv20_5 = Conv2D(18,5, data_format="channels_last", activation='relu',padding="same")(conv30_5)
-    conv15_5 = Conv2D(18,3, data_format="channels_last", activation='relu',padding="same")(conv20_5)
+ # Run2 and T0628 Architecture   
+#    conv30_9 = Conv2D(50,7, data_format="channels_last", input_shape=(jetDim,jetDim,layNum+2), activation='relu',padding="same")(ComplInput)
+#    conv30_7 = Conv2D(20,5, data_format="channels_last", activation='relu',padding="same")(conv30_9)
+#    conv30_5 = Conv2D(20,5, data_format="channels_last", activation='relu',padding="same")(conv30_7)#
+#    conv20_5 = Conv2D(18,5, data_format="channels_last", activation='relu',padding="same")(conv30_5)
+#    conv15_5 = Conv2D(18,3, data_format="channels_last", activation='relu',padding="same")(conv20_5)
 
-    conv15_3_1 = Conv2D(18,3, data_format="channels_last",activation='relu', padding="same")(conv15_5)
-    conv15_3_2 = Conv2D(18,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_1)
-    conv15_3_3 = Conv2D(18,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_2) #(12,3)
-    conv15_3 = Conv2D(18,3, data_format="channels_last",padding="same")(conv15_3_3) #(12,3)
+#    conv15_3_1 = Conv2D(18,3, data_format="channels_last",activation='relu', padding="same")(conv15_5)
+#    conv15_3_2 = Conv2D(18,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_1)
+#    conv15_3_3 = Conv2D(18,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_2) #(12,3)
+#    conv15_3 = Conv2D(18,3, data_format="channels_last",padding="same")(conv15_3_3) #(12,3)
     # T1023 architecture difference (last layer has 1x1 filter instead of 3x3
     # conv15_3 = Conv2D(18,1, data_format="channels_last",padding="same")(conv15_1_1) #(12,1)
-    reshaped = Reshape((jetDim,jetDim,overlapNum,parNum+1))(conv15_3)
+#    reshaped = Reshape((jetDim,jetDim,overlapNum,parNum+1))(conv15_3)
 
-    conv12_3_1 = Conv2D(12,3, data_format="channels_last", activation='relu', padding="same")(conv15_5)  #new
-    conv1_3_2 = Conv2D(9,3, data_format="channels_last", activation='relu', padding="same")(conv12_3_1) #drop7lb   #new
-    conv1_3_3 = Conv2D(7,3, data_format="channels_last", activation='relu',padding="same")(conv1_3_2) #new
-    conv1_3_1 = Conv2D(6,3, data_format="channels_last", activation='sigmoid', padding="same")(conv1_3_3)
-    reshaped_prob = Reshape((jetDim,jetDim,overlapNum,2))(conv1_3_1)
+#    conv12_3_1 = Conv2D(12,3, data_format="channels_last", activation='relu', padding="same")(conv15_5)  #new
+#    conv1_3_2 = Conv2D(9,3, data_format="channels_last", activation='relu', padding="same")(conv12_3_1) #drop7lb   #new
+#    conv1_3_3 = Conv2D(7,3, data_format="channels_last", activation='relu',padding="same")(conv1_3_2) #new
+#    conv1_3_1 = Conv2D(6,3, data_format="channels_last", activation='sigmoid', padding="same")(conv1_3_3)
+#    reshaped_prob = Reshape((jetDim,jetDim,overlapNum,2))(conv1_3_1)
 
 #############################################################################################################################
 
  # T1017 and T1024 Architecture
-#    conv30_9 = Conv2D(50,7, data_format="channels_last", input_shape=(jetDim,jetDim,layNum+2), activation='relu',padding="same")(ComplInput)
-#    conv30_7 = Conv2D(40,5, data_format="channels_last", activation='relu',padding="same")(conv30_9)
-#    conv30_5 = Conv2D(40,5, data_format="channels_last", activation='relu',padding="same")(conv30_7)#
-#    conv20_5 = Conv2D(30,5, data_format="channels_last", activation='relu',padding="same")(conv30_5)
-#    conv15_5 = Conv2D(30,3, data_format="channels_last", activation='relu',padding="same")(conv20_5)
+    conv30_9 = Conv2D(50,7, data_format="channels_last", input_shape=(jetDim,jetDim,layNum+2), activation='relu',padding="same")(ComplInput)
+    conv30_7 = Conv2D(40,5, data_format="channels_last", activation='relu',padding="same")(conv30_9)
+    conv30_5 = Conv2D(40,5, data_format="channels_last", activation='relu',padding="same")(conv30_7)#
+    conv20_5 = Conv2D(30,5, data_format="channels_last", activation='relu',padding="same")(conv30_5)
+    conv15_5 = Conv2D(30,3, data_format="channels_last", activation='relu',padding="same")(conv20_5)
 
-#    conv15_3_1 = Conv2D(30,3, data_format="channels_last",activation='relu', padding="same")(conv15_5)
-#    conv15_3_2 = Conv2D(30,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_1)
-#    conv15_3_3 = Conv2D(30,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_2) #(12,3)
-#    conv15_3 = Conv2D(18,3, data_format="channels_last",padding="same")(conv15_3_3) #(12,3)
-#    reshaped = Reshape((jetDim,jetDim,overlapNum,parNum+1))(conv15_3)
+    conv15_3_1 = Conv2D(30,3, data_format="channels_last",activation='relu', padding="same")(conv15_5)
+    conv15_3_2 = Conv2D(30,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_1)
+    conv15_3_3 = Conv2D(30,3, data_format="channels_last",activation='relu', padding="same")(conv15_3_2) #(12,3)
+    conv15_3 = Conv2D(18,3, data_format="channels_last",padding="same")(conv15_3_3) #(12,3)
+    reshaped = Reshape((jetDim,jetDim,overlapNum,parNum+1))(conv15_3)
 
-#    conv12_3_1 = Conv2D(30,3, data_format="channels_last", activation='relu', padding="same")(conv15_5)  #new
-#    conv1_3_2 = Conv2D(25,3, data_format="channels_last", activation='relu', padding="same")(conv12_3_1) #drop7lb   #new
-#    conv1_3_3 = Conv2D(20,3, data_format="channels_last", activation='relu',padding="same")(conv1_3_2) #new
-#    conv1_3_1 = Conv2D(6,3, data_format="channels_last", activation='sigmoid', padding="same")(conv1_3_3)
-#    reshaped_prob = Reshape((jetDim,jetDim,overlapNum,2))(conv1_3_1)
+    conv12_3_1 = Conv2D(30,3, data_format="channels_last", activation='relu', padding="same")(conv15_5)  #new
+    conv1_3_2 = Conv2D(25,3, data_format="channels_last", activation='relu', padding="same")(conv12_3_1) #drop7lb   #new
+    conv1_3_3 = Conv2D(20,3, data_format="channels_last", activation='relu',padding="same")(conv1_3_2) #new
+    conv1_3_1 = Conv2D(6,3, data_format="channels_last", activation='sigmoid', padding="same")(conv1_3_3)
+    reshaped_prob = Reshape((jetDim,jetDim,overlapNum,2))(conv1_3_1)
 #######################################################################################################################
 
 
@@ -806,7 +806,7 @@ if PREDICT :
         #Barrel training (used in presentation, CMSSW PR...)
         ## model.load_weights('data/DeepCore_barrel_weights.246-0.87.hdf5')
         ## model.load_weights('/storage/local/data1/gpuscratch/hichemb/Training0302/DeepCore_train_0302_252.h5')
-        model.load_weights('/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Training0628/DeepCore_train_1017.h5')
+        model.load_weights('/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Training1017/DeepCore_train_1017.h5')
         #EndCap training, last weights (not satisfactory, consider to restart)      
         # model.load_weights('DeepCore_ENDCAP_train_ep150.h5')
         #model.load_weights('DeepCore_train_ev{ev}_ep{ep}.h5'.format(ev=jetNum,ep=epochs+start_epoch)) 
@@ -1196,6 +1196,9 @@ if OUTPUT :
                                          if not DRAW_ONLY : bins.append((validation_par[j_eff][x][y][trk][par] - target_[j_eff][x][y][trk][par])/target_[j_eff][x][y][trk][par])  #relative
                                          if not DRAW_ONLY :  bins_pred.append(validation_par[j_eff][x][y][trk][par])
                                          bins_target.append(target_[j_eff][x][y][trk][par])
+                                         #if not DRAW_ONLY: bins.append((1/validation_par[j_eff][x][y][trk][par] - 1/target_[j_eff][x][y][trk][par]))  #relative
+                                         #if not DRAW_ONLY:  bins_pred.append(1/validation_par[j_eff][x][y][trk][par])
+                                         #bins_target.append(1/target_[j_eff][x][y][trk][par])
                                      nbin = nbin+1
                                      if not DRAW_ONLY :
                                           if(validation_par[j_eff][x][y][trk][par]*target_[j_eff][x][y][trk][par]>0) : #same Sign
@@ -1206,42 +1209,61 @@ if OUTPUT :
                  fracsig = 0
              print("Parameter {PAR}, number of correct sign={n}, fraction={f}".format(PAR=par, n=n_sig_ok, f=fracsig))
              plt.figure()
-             if((par== 0) or (par == 1)) :
-                 pylab.hist(bins,60, facecolor='darkorange',alpha=0.75,range=(-300,300))
-             elif((par== 2) or (par == 3)) :
-                 pylab.hist(bins,70, facecolor='darkorange', alpha=0.75,range=(-0.03,0.03))
-             else :
-                 pylab.hist(bins,200, facecolor='darkorange', alpha=0.75, range=(-2,5))#range=(-0.2,0.2))#range=(-2,5)) #relative
-             if(par == 0) :
-                 pylab.title('Residual distribution - x',fontsize=22)
+             if(par== 0) :
+                 pylab.hist(bins,80,facecolor='darkorange',alpha=0.75,range=(-200,200))
              if(par == 1) :
-                 pylab.title('Residual distribution - y',fontsize=22)
+                 pylab.hist(bins,120, facecolor='darkorange',alpha=0.75,range=(-300,300))
+             if((par== 2) or (par == 3)) :
+                 pylab.hist(bins,100, facecolor='darkorange',alpha=0.75,range=(-0.03,0.02))
+             if (par == 4) :
+                 pylab.hist(bins,150, facecolor='darkorange', alpha=0.75,range=(-3,12))#range=(-0.2,0.2))#range=(-2,5)) #relative
+                 #pylab.hist(bins,200, facecolor='darkorange', alpha=0.75,range=(-2000, 2000))#range=(-0.2,0.2))#range=(-2,5)) #relative
+             if(par == 0) :
+                 pylab.title('Residual Distribution - $\Delta x$',fontsize=22)
+                 if not DRAW_ONLY : mean = np.array(bins).mean()
+                 if not DRAW_ONLY : sigma = np.array(bins).std()
+                 if not DRAW_ONLY :  plt.text(80, 50000, "Mean =%.2f $\mu$m"%(mean), size=14)
+                 if not DRAW_ONLY : plt.text(80, 60000, "$\sigma_{\Delta x}$ = %.1f $\mu$m"%(sigma), size=14)
+             if(par == 1) :
+                 pylab.title('Residual Distribution - $\Delta y$',fontsize=22)
+                 if not DRAW_ONLY : mean = np.array(bins).mean()
+                 if not DRAW_ONLY : sigma = np.array(bins).std()
+                 if not DRAW_ONLY :  plt.text(100, 50000, "Mean =%.1f $\mu$m"%(mean), size=14)
+                 if not DRAW_ONLY : plt.text(100, 60000, "$\sigma_{\Delta y}$ = %.1f $\mu$m"%(sigma), size=14)
+
              if(par == 2) :
-                 pylab.title('Residual distribution - $\eta$',fontsize=22)
+                 pylab.title('Residual Distribution - $\Delta \eta$',fontsize=22)
                  ##plt.text(-0.032,0.026, "CMS ", weight='bold', size=17)
                  ##plt.text(-0.032,0.023, "Simulation Preliminary", style='italic', size=14)
                  ##plt.text(0.0215,0.026, "13 TeV", size = 17)
                  ##plt.text(0.0025,-0.015, r'QCD events ($\langle PU \rangle=30$)',size=14)
                  ##plt.text(0.0025,-0.02,r'1.8 TeV $<\hat p_T<$2.4 TeV',size=14)
                  ##plt.text(0.0025,-.025,r'$p_T^{jet}>1$ TeV, $|\eta^{jet}|<1.4$',size=14)
-                 
-                 
-                 
                  if not DRAW_ONLY : mean = np.array(bins).mean()
                  if not DRAW_ONLY : sigma = np.array(bins).std()
-                 if not DRAW_ONLY :  plt.text(0.0009, 100000, "Mean =%f"%(mean), size=14)
-                 if not DRAW_ONLY : plt.text(0.00145, 150000, "$\sigma_{res}$ = %.3f"%(sigma), size=14)
+                 if not DRAW_ONLY :  plt.text(0.01, 130000, "Mean = 0", size=14)
+                 if not DRAW_ONLY : plt.text(0.01, 150000, "$\sigma_{\Delta \eta}$ = %.3f"%(sigma), size=14)
 
              if(par == 3) :
-                 pylab.title('Residual distribution - $\phi$',fontsize=22)
+                 pylab.title('Residual Distribution - $\Delta \phi$',fontsize=22)
+                 if not DRAW_ONLY : mean = np.array(bins).mean()
+                 if not DRAW_ONLY : sigma = np.array(bins).std()
+                 if not DRAW_ONLY :  plt.text(0.01, 80000, "Mean = 0", size=14)
+                 if not DRAW_ONLY : plt.text(0.01, 90000, "$\sigma_{\Delta \phi}$ = %.3f"%(sigma), size=14)
              if(par == 4) :
-                 pylab.title('Residual distribution - $p_T$',fontsize=22)
-             pylab.ylabel('Entries',fontsize=18)
-             pylab.xlabel('(prediction-target)/target',fontsize=18) #only 1/pt
+                 pylab.title('Residual Distribution - $1/p_T$',fontsize=22)
+                 if not DRAW_ONLY : mean = np.array(bins).mean()
+                 if not DRAW_ONLY : sigma = np.array(bins).std()
+                 if not DRAW_ONLY :  plt.text(4, 28000, "Mean =%.1f"%(mean), size=14)
+                 if not DRAW_ONLY : plt.text(4, 25000, "$\sigma_{\Delta(1/p_T)rel}$ = %.1f"%(sigma), size=14)
+                 #if not DRAW_ONLY :  plt.text(700, 28000, "Mean =%.1f"%(mean), size=14)
+                 #if not DRAW_ONLY : plt.text(700, 25000, "$\sigma_{\Delta(p_T)}$ = %.1f"%(sigma), size=14)
+             pylab.ylabel('TCP',fontsize=18)
+             pylab.xlabel('(Prediction-Target)/Target',fontsize=18) #only 1/pt
              if(par==0 or par==1) : #relative
-                 pylab.xlabel('prediction-target [$\mu$m]',fontsize=22)
+                 pylab.xlabel('Prediction-Target [$\mu$m]',fontsize=22)
              elif(par==2 or par==3) : #relative
-                 pylab.xlabel('prediction-target',fontsize=22)
+                 pylab.xlabel('Prediction-Target',fontsize=22)
             #  else : #relative
             #      pylab.xlabel('prediction-target [1/GeV]',fontsize=22)
 
@@ -1253,32 +1275,35 @@ if OUTPUT :
              pdf_par.savefig(bbox_inches='tight')
 
              plt.figure()
-             if((par == 0) or (par ==1)) :
-                 pylab.hist(bins_target,80, facecolor='royalblue', alpha=0.75,range=(-400,400))
-             elif((par == 2) or (par ==3 )) :
-                 pylab.hist(bins_target,80, facecolor='royalblue', alpha=0.75,range=(-0.04,0.04))
-             else :
-                 pylab.hist(bins_target,200, facecolor='royalblue', alpha=0.75, range=(-0.01,0.2))
+             if(par == 0):
+                 pylab.hist(bins_target,80, facecolor='royalblue', alpha=0.75,range=(-200,200))
+             if(par ==1) :
+                 pylab.hist(bins_target,120, facecolor='royalblue', alpha=0.75,range=(-300,300))
+             if((par == 2) or (par ==3 )) :
+                 pylab.hist(bins_target,90, facecolor='royalblue', alpha=0.75,range=(-0.05,0.04))
+             if (par ==4):
+                 pylab.hist(bins_target,100, facecolor='royalblue',alpha=0.75,range=(-0.05,0.20))
+                 #pylab.hist(bins_target,200, facecolor='royalblue', alpha=0.75,range=(-1000,1000))
 
              if(par == 0) :
-                 pylab.title('Target distribution - x',fontsize=22)
+                 pylab.title('Target Distribution - $\Delta x$',fontsize=22)
              if(par == 1) :
-                 pylab.title('Target distribution - y',fontsize=22)
+                 pylab.title('Target Distribution - $\Delta y$',fontsize=22)
              if(par == 2) :
-                 pylab.title('Target distribution - $\eta$',fontsize=22)
+                 pylab.title('Target Distribution - $\Delta \eta$',fontsize=22)
              if(par == 3) :
-                 pylab.title('Target distribution - $\phi$',fontsize=22)
+                 pylab.title('Target Distribution - $\Delta \phi$',fontsize=22)
              if(par == 4) :
-                 pylab.title('Target distribution - $p_T$',fontsize=22)
+                 pylab.title('Target Distribution - $1/p_T$',fontsize=22)
              if(par==0 or par==1) :
-                 pylab.xlabel('target [$\mu$m]',fontsize=18)
-             elif(par==2 or par==3) :
-                 pylab.xlabel('target',fontsize=18)
-             else :
+                 pylab.xlabel('Target [$\mu$m]',fontsize=18)
+             if(par==2 or par==3) :
+                 pylab.xlabel('Target',fontsize=18)
+             if (par ==4) :
                  ##pylab.xlabel('prediction-target [1/GeV]',fontsize=18)
                  ## fixed to correct label
                  pylab.xlabel('Target [1/GeV]',fontsize=18)
-             pylab.ylabel('Entries',fontsize=18)
+             pylab.ylabel('TCP',fontsize=18)
              plt.grid(True)
              if(RGB) :
                  pylab.savefig("target_{jj}_{PAR}.pdf".format(PAR=par,jj=jetNum), bbox_inches='tight')#.png
@@ -1287,32 +1312,37 @@ if OUTPUT :
              pdf_par.savefig(bbox_inches='tight')
 
              plt.figure()
-             if((par == 0) or (par == 1)) :
-                 pylab.hist(bins_pred,80, facecolor='red', alpha=0.75,range=(-400,400))
-             elif((par == 2) or (par == 3)) :
-                 pylab.hist(bins_pred,80, facecolor='red', alpha=0.75,range=(-0.04,0.04))
-             else :
-                 pylab.hist(bins_pred,200, facecolor='red', alpha=0.75, range=(-0.01,0.2))
+             
+
+             if(par == 0):
+                 pylab.hist(bins_pred,80, facecolor='red', alpha=0.75,range=(-200,200))
+             if(par ==1) :
+                 pylab.hist(bins_pred,120, facecolor='red', alpha=0.75,range=(-300,300))
+             if((par == 2) or (par ==3 )) :
+                 pylab.hist(bins_pred,70, facecolor='red', alpha=0.75,range=(-0.04,0.03))
+             if (par ==4) :
+                 pylab.hist(bins_pred,100, facecolor='red',alpha=0.75,range=(-0.05,0.2))
+                 #pylab.hist(bins_pred,200, facecolor='red',alpha=0.75,range=(-1000,1000))
 
              if(par == 0) :
-                 pylab.title('Prediction distribution - x',fontsize=22)
+                 pylab.title('Prediction Distribution - $\Delta x$',fontsize=22)
              if(par == 1) :
-                 pylab.title('Prediction distribution - y',fontsize=22)
+                 pylab.title('Prediction Distribution - $\Delta y$',fontsize=22)
              if(par == 2) :
-                 pylab.title('Prediction distribution - $\eta$',fontsize=22)
+                 pylab.title('Prediction Distribution - $\Delta \eta$',fontsize=22)
              if(par == 3) :
-                 pylab.title('Prediction distribution - $\phi$',fontsize=22)
+                 pylab.title('Prediction Distribution - $\Delta \phi$',fontsize=22)
              if(par == 4) :
-                 pylab.title('Prediction distribution - $p_T$',fontsize=22)
+                 pylab.title('Prediction Distribution - $1/p_T$',fontsize=22)
              if(par==0 or par==1) :
-                 pylab.xlabel('prediction [$\mu$m]',fontsize=18)
-             elif(par==2 or par==3) :
-                 pylab.xlabel('prediction',fontsize=18)
-             else :
+                 pylab.xlabel('Prediction [$\mu$m]',fontsize=18)
+             if(par==2 or par==3) :
+                 pylab.xlabel('Prediction',fontsize=18)
+             if (par ==4) :
                  ##pylab.xlabel('prediction-target [1/GeV]',fontsize=18)
                  ## fixed to correct label
-                 pylab.xlabel('prediction [1/GeV]',fontsize=18)
-             pylab.ylabel('Entries',fontsize=18)
+                 pylab.xlabel('Prediction [1/GeV]',fontsize=18)
+             pylab.ylabel('TCP',fontsize=18)
              plt.grid(True)
              if(RGB) :
                  pylab.savefig("prediction_{jj}_{PAR}.pdf".format(PAR=par,jj=jetNum),bbox_inches='tight')#.png
@@ -1333,9 +1363,11 @@ if OUTPUT :
                    # plt.ylabel('x (prediction - target) [cm]')
                     
                     ## old scatter plot (target vs pred)
-                    plt.hist2d(bins_pred,bins_target,bins=300,range = [[-150,150], [-150, 150]], cmap=plt.cm.viridis)#, marker='+')
-                    plt.xlabel('x prediction [$\mu$m]', fontsize=18)
-                    plt.ylabel('x target [$\mu$m]', fontsize=18)
+                    plt.hist2d(bins_target, bins_pred,bins=300,range= [[-150,150], [-150, 150]], cmap=plt.cm.viridis)#, marker='+')
+                    l_x = [-150, 150]
+                    plt.plot(l_x, l_x, color='black') 
+                    plt.ylabel('Predicted $\Delta x$ [$\mu$m]', fontsize=18)
+                    plt.xlabel('Target $\Delta x$ [$\mu$m]', fontsize=18)
                     plt.colorbar()
                  if(par == 1) :
                     #bins_pred_minus_target = []
@@ -1347,9 +1379,11 @@ if OUTPUT :
                     #plt.ylabel('y (prediction - target) [cm]')
                     
                     ## old scatter plot (target vs pred)
-                    plt.hist2d(bins_pred,bins_target,bins=450,range = [[-225,225], [-225, 225]], cmap=plt.cm.viridis) 
-                    plt.xlabel('y prediction [$\mu$m]', fontsize=18)
-                    plt.ylabel('y target [$\mu$m]', fontsize=18)
+                    plt.hist2d(bins_target,bins_pred,bins=450,range= [[-225,225], [-225, 225]], cmap=plt.cm.viridis) 
+                    l_y = [-225,225]
+                    plt.plot(l_y, l_y, color='black') 
+                    plt.ylabel('Predicted $\Delta y$ [$\mu$m]', fontsize=18)
+                    plt.xlabel('Target $\Delta y$ [$\mu$m]', fontsize=18)
                     plt.colorbar()
                  if(par == 2) :
                     #bins_pred_minus_target = []
@@ -1361,9 +1395,11 @@ if OUTPUT :
                     #plt.ylabel('$\eta$ (prediction - target)', fontsize=18, labelpad=-5)
                     
                     ## old scatter plot (target vs pred)
-                    plt.hist2d(bins_pred,bins_target,bins=50,range = [[-0.03, 0.03], [-0.03, 0.03]], cmap=plt.cm.viridis)
-                    plt.xlabel('$\eta$ prediction', fontsize=18)
-                    plt.ylabel('$\eta$ target', fontsize=18)
+                    plt.hist2d(bins_target,bins_pred,bins=160,range = [[-0.04,0.04], [-0.04, 0.04]], cmap=plt.cm.viridis)
+                    l_eta = [-0.04,0.04]
+                    plt.plot(l_eta, l_eta, color='black') 
+                    plt.ylabel('Predicted $\Delta \eta$ ', fontsize=18)
+                    plt.xlabel('Target $\Delta \eta$', fontsize=18)
                     plt.colorbar()
                     
                     ## plt.text(-0.029,0.026, "CMS ", weight='bold', size=17, color="white")
@@ -1384,9 +1420,11 @@ if OUTPUT :
                     #plt.ylabel('$\phi$ (prediction - target)', fontsize=18, labelpad=-5)
                     
                     ## old scatter plot (target vs pred)
-                    plt.hist2d(bins_pred,bins_target,bins=50,range = [[-0.03, 0.03], [-0.03, 0.03]], cmap=plt.cm.viridis)
-                    plt.xlabel('$\phi$ prediction', fontsize=18)
-                    plt.ylabel('$\phi$ target', fontsize=18)
+                    plt.hist2d(bins_target,bins_pred,bins=160,range = [[-0.04,0.04], [-0.04, 0.04]], cmap=plt.cm.viridis)
+                    l_phi = [-0.04,0.04]
+                    plt.plot(l_phi, l_phi, color='black') 
+                    plt.ylabel('Predicted $\Delta \phi$', fontsize=18)
+                    plt.xlabel('Target $\Delta \phi$', fontsize=18)
                     plt.colorbar()
                  if(par == 4) :
                     #bins_pred_minus_target = []
@@ -1398,9 +1436,16 @@ if OUTPUT :
                     ##plt.ylabel('$1/p_T$ (prediction - target) [1/GeV]', fontsize=18, labelpad=-5)
                   
                     ## old scatter plot (target vs pred)
-                    plt.hist2d(bins_pred,bins_target,bins=150,range = [[0, 0.15], [0, 0.15]])
-                    plt.xlabel('$1/p_T$ prediction [1/GeV]', fontsize=18)
-                    plt.ylabel('$1/p_T$ target [1/GeV]', fontsize=18)
+                    plt.hist2d(bins_target,bins_pred,bins=250,range= [[-0.05,0.2], [-0.05, 0.2]])
+                    l_pt = [-0.05, 0.2]
+                    l_zero = [0,0]
+                    #plt.hist2d(bins_target,bins_pred,bins=200,range=[[-1000,1000], [-1000, 1000]])
+                    #l_pt = [-1000, 1000]
+                    plt.plot(l_pt, l_pt, color='black') 
+                    plt.plot(l_zero, l_pt, color='black', linestyle='dashed') 
+                    plt.plot(l_pt, l_zero, color='black', linestyle='dashed') 
+                    plt.ylabel('Predicted $1/p_T$ [1/GeV]', fontsize=18)
+                    plt.xlabel('Target $1/p_T$ [1/GeV]', fontsize=18)
                     plt.colorbar()
                  if(RGB) :
                      pylab.savefig("predVStarget_{jj}_{PAR}.pdf".format(PAR=par,jj=jetNum),bbox_inches='tight')#.png
