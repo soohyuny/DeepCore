@@ -135,6 +135,9 @@ sess.run(tf.global_variables_initializer())
 
 outputs = pred_node_names 
 
+#IMPORTANT NOTE:
+# For some reason output nodes are flipped, so you need to flip the order when running DeepCoreSeeGenerator.cc in CMSSW
+
 # conversion here
 constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph.as_graph_def(), outputs)
 
