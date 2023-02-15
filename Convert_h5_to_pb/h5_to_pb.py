@@ -1,59 +1,31 @@
 from __future__ import print_function
-
-
-
 import os
-
 # ran without problems on fermilab gpu server singularity environment
 # (tensorflow 2)
 
+import numpy as np
 import tensorflow as tf
 if tf.__version__.startswith("2."):
   tf = tf.compat.v1
 tf.disable_eager_execution()
-
 import keras
-
-
 import math
-
 import sys
-
 import argparse
-
-
 from keras.callbacks import ModelCheckpoint
-
 from  matplotlib import pyplot as plt
-
 import pylab
-
 import glob
-
 from tensorflow.python.framework import ops
-
 from tensorflow.python.ops import clip_ops
-
 from tensorflow.python.ops import math_ops
-
 from tensorflow.python.ops import nn
 
-from numpy import concatenate as concatenatenp
-
-import random
-
-
-
-from keras.layers import AlphaDropout
-
-
-
 from keras import backend as K
-
 from keras.models import load_model
 
 # adjust input file (h5) path here
-weight_file_path = '/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Convert_h5_to_pb/DeepCore_model_1017.h5'
+weight_file_path = '/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Convert_h5_to_pb/Valerio.hdf5'
 
 # defining loss functions
 
@@ -73,7 +45,7 @@ def loss_mse_select_clipped(y_true, y_pred) :
   # Valerio here multplied denominator by 4 and does not add 0.00001, which is what he did during the training, so the loss function here is not defined correctly
   # return tf.reduce_sum(out, axis=None)/(tf.reduce_sum(wei,axis=None)*4) #4=numPar
   # Fixed
-  return tf.reduce_sum(out, axis=None)/(tf.reduce_sum(wei,axis=None)*5 + 0.00001) #4=numPar
+    return tf.reduce_sum(out, axis=None)/(tf.reduce_sum(wei,axis=None)*5 + 0.00001) #4=numPar
 
 def loss_ROI_crossentropy(target, output):
     epsilon_ = _to_tensor(keras.backend.epsilon(), output.dtype.base_dtype)
@@ -117,9 +89,13 @@ def loss_ROIsoft_crossentropy(target, output):
 # wrong, also it's not loading epsilon function
 # net_model = load_model(weight_file_path,custom_objects={'loss_mse_select_clipped':loss_mse_select_clipped,'loss_ROIsoft_crossentropy':loss_ROI_crossentropy, '_to_tensor':_to_tensor})
 # Fixed: if last loss function used is ROIsoft, use this
+sess = tf.Session()
+K.set_session(sess)
+K.set_learning_phase(0)
 net_model = load_model(weight_file_path,custom_objects={'loss_mse_select_clipped':loss_mse_select_clipped,'loss_ROIsoft_crossentropy':loss_ROIsoft_crossentropy, '_to_tensor':_to_tensor, 'epsilon': epsilon})
-# If last loss function used is ROI, use this
-# net_model = load_model(weight_file_path,custom_objects={'loss_mse_select_clipped':loss_mse_select_clipped,'loss_ROI_crossentropy':loss_ROI_crossentropy, '_to_tensor':_to_tensor, 'epsilon':epsilon})
+#predict test case for validation
+print(net_model.predict([np.array([30*[30*[[0]*4]]],dtype=float),np.array([0],dtype=float),np.array([0],dtype=float)]))
+
 
 # renaming output nodes
 num_output = 2
@@ -130,13 +106,8 @@ for i in range(num_output):
       pred[i] = tf.identity(net_model.outputs[i], name=pred_node_names[i])
 print('output nodes names are: ', pred_node_names)
 
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())
-
 outputs = pred_node_names 
 
-#IMPORTANT NOTE:
-# For some reason output nodes are flipped, so you need to flip the order when running DeepCoreSeeGenerator.cc in CMSSW
 
 # conversion here
 constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph.as_graph_def(), outputs)
