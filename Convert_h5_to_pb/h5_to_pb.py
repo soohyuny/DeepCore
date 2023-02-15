@@ -25,7 +25,7 @@ from keras import backend as K
 from keras.models import load_model
 
 # adjust input file (h5) path here
-weight_file_path = '/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Convert_h5_to_pb/DeepCore_model_1017.h5'
+weight_file_path = '/storage/local/data1/gpuscratch/hichemb/DeepCore_git/DeepCore/Convert_h5_to_pb/Valerio.hdf5'
 
 # defining loss functions
 
@@ -108,8 +108,6 @@ print('output nodes names are: ', pred_node_names)
 
 outputs = pred_node_names 
 
-#IMPORTANT NOTE:
-# For some reason output nodes are flipped, so you need to flip the order when running DeepCoreSeeGenerator.cc in CMSSW
 
 # conversion here
 constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph.as_graph_def(), outputs)
