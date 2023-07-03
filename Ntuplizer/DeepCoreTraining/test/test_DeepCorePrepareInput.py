@@ -32,16 +32,19 @@ process.source = cms.Source("PoolSource",
     dropDescendantsOfDroppedBranches = cms.untracked.bool(False),
     fileNames = cms.untracked.vstring([
       #'root://cms-xrd-global.cern.ch//store/mc/QCD_Pt_1800to2400_TuneCP5_14TeV_pythia8/Run3Winter20DRMiniAOD-FlatPU0to80ALCARECO_110X_mcRun3_2021_realistic_v6-v2/AODSIM'
-      'root://cms-xrd-global.cern.ch//store/mc/RunIISummer17DRPremix/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/AODSIM/92X_upgrade2017_realistic_v10-v5/90000/00043120-439C-E711-9C18-002590FD030A.root' #barrel example
+      #'root://cms-xrd-global.cern.ch//store/mc/RunIISummer17DRPremix/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/AODSIM/92X_upgrade2017_realistic_v10-v5/90000/00043120-439C-E711-9C18-002590FD030A.root' #barrel example
     # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRStdmix/UBGGun_E-1000to7000_Eta-1p2to2p1_13TeV_pythia8/AODSIM/NoPU_94X_mc2017_realistic_v11-v2/20000/0053DFD7-337B-EA11-9E55-002590E39F36.root' #endcap example
-  ]),
+	'root://cms-xrd-global.cern.ch//store/mc/Run3Winter23Reco/TT_TuneCP5_13p6TeV_powheg-pythia8/AODSIM'
+	]),
     secondaryFileNames = cms.untracked.vstring([
-      'root://cms-xrd-global.cern.ch//store/mc/RunIISummer17GS/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/GEN-SIM/92X_upgrade2017_realistic_v10-v1/70000/100B4392-4586-E711-95F8-0CC47A4D76C0.root', 
-      'root://cms-xrd-global.cern.ch//store/mc/RunIISummer17GS/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/GEN-SIM/92X_upgrade2017_realistic_v10-v1/70000/465BA88A-4386-E711-BBCD-0025905B8612.root',
-      'root://cms-xrd-global.cern.ch//store/mc/RunIISummer17GS/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/GEN-SIM/92X_upgrade2017_realistic_v10-v1/70000/A2A9FD63-5186-E711-B0DC-0CC47A4D769A.root'
+      #'root://cms-xrd-global.cern.ch//store/mc/RunIISummer17GS/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/GEN-SIM/92X_upgrade2017_realistic_v10-v1/70000/100B4392-4586-E711-95F8-0CC47A4D76C0.root', 
+      #'root://cms-xrd-global.cern.ch//store/mc/RunIISummer17GS/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/GEN-SIM/92X_upgrade2017_realistic_v10-v1/70000/465BA88A-4386-E711-BBCD-0025905B8612.root',
+      #'root://cms-xrd-global.cern.ch//store/mc/RunIISummer17GS/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/GEN-SIM/92X_upgrade2017_realistic_v10-v1/70000/A2A9FD63-5186-E711-B0DC-0CC47A4D769A.root'
       ##'root://cms-xrd-global.cern.ch//store/mc/RunIISummer17GS/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/GEN-SIM/92X_upgrade2017_realistic_v10-v1/50000/347DE057-508C-E711-9FF0-00259020080C.root' #barrel example
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRStdmix/UBGGun_E-1000to7000_Eta-1p2to2p1_13TeV_pythia8/GEN-SIM-DIGI-RAW/NoPU_94X_mc2017_realistic_v11-v2/20000/000AD3DA-BA78-EA11-A244-AC1F6B8AC0CE.root' #endcap example
-        ]) 
+#	'root://cms-xrd-global.cern.ch//store/mc/Run3Winter23Reco/TT_TuneCP5_13p6TeV_powheg-pythia8/GEN-SIM-RECO'
+	'root://cms-xrd-global.cern.ch//store/mc/Run3Winter23wmLHEGS/TT_TuneCP5_13p6TeV_powheg-pythia8/GEN-SIM'
+	]) 
 )
 
 process.options = cms.untracked.PSet(
@@ -57,7 +60,7 @@ process.RECOSIMoutput = cms.OutputModule("PoolOutputModule",
         dataTier = cms.untracked.string('GEN-SIM-RECO'),
         filterName = cms.untracked.string('')
     ),
-    fileName = cms.untracked.string('file:Ntuplizer_output1.root'),
+    fileName = cms.untracked.string('file:Ntuplizer_step1.root'),
     outputCommands = cms.untracked.vstring(["drop *"]),
     splitLevel = cms.untracked.int32(0)
 )
@@ -75,7 +78,8 @@ process.RECOSIMoutput.outputCommands.append("keep *_simSiPixelDigis_*_*")
 process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 from Configuration.AlCa.GlobalTag import GlobalTag
 ##process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase1_2017_realistic', '') #barrel trained with "auto:phase1_2017_realistic", endcap trained with "auto:phase1_2018_realistic"
-process.GlobalTag = GlobalTag(process.GlobalTag,'auto:phase1_2021_realistic','') ## Using 2021 since we are using run 3 mc 
+#process.GlobalTag = GlobalTag(process.GlobalTag,'auto:phase1_2021_realistic','') ## Using 2021 since we are using run 3 mc 
+process.GlobalTag = GlobalTag(process.GlobalTag, '126X_mcRun3_2023_forPU65_v1', '') #Using 2023 PU 65
 
 # Path and EndPath definitions
 process.digitisation_step = cms.Path(process.pdigi_valid)

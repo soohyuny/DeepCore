@@ -23,7 +23,7 @@ config.Data.inputDataset = '/RelValQCD_Pt_1800_2400_14/hboucham-DeepCoreNtuplize
 config.Data.inputDBS = 'phys03' ##'phys03' ## might need to change to global?
 config.Data.splitting = 'EventAwareLumiBased'
 config.Data.unitsPerJob = 1000
-NJOBS = 3
+NJOBS = 5000
 config.Data.totalUnits = config.Data.unitsPerJob * NJOBS
 
 #config.Data.outLFNDirBase = '/store/user/%s/DeepCoreTrainingSample' % (getUsernameFromCRIC())
@@ -33,4 +33,6 @@ config.Data.outputDatasetTag = 'DeepCoreTrainingSample'
 ##config.Data.totalUnits = config.Data.unitsPerJob*10000
 
 #config.Site.storageSite = "T2_IT_Pisa
-config.Site.storageSite = "T3_US_FNALLPC"
+#config.Site.storageSite = "T3_US_FNALLPC"
+config.Site.storageSite = 'T2_CH_CERN'
+config.Data.outLFNDirBase = '/store/group/phys_tracking/Soohyuny/DeepCoreNtuplizer/'

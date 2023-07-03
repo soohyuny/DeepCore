@@ -14,7 +14,9 @@ process.load('Configuration.StandardSequences.RawToDigi_cff')
 process.load('Configuration.StandardSequences.Reconstruction_cff')
 
 ## process.GlobalTag.globaltag="94X_mc2017_realistic_v10"
-process.GlobalTag.globaltag= "120X_mcRun3_2021_realistic_v6" ## Updating global tag since we are using run 3 2021 mc
+#process.GlobalTag.globaltag = "120X_mcRun3_2021_realistic_v6" ## Updating global tag since we are using run 3 2021 mc
+from Configuration.AlCa.GlobalTag import GlobalTag
+process.GlobalTag = GlobalTag(process.GlobalTag, '126X_mcRun3_2023_forPU65_v1', '')
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) ) #-1 = tutti (numero edi eventi)
 
 process.source = cms.Source("PoolSource",
