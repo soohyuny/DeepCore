@@ -165,6 +165,7 @@ private:
 //  edm::ESHandle<GlobalTrackingGeometry> geometry_.;
 //  edm::ESHandle<Propagator>             propagator_;
 
+//Migration to ESGetToken from ESHandle
   edm::ESGetToken<MagneticField, IdealMagneticFieldRecord>          magfield_;
   edm::ESGetToken<GlobalTrackingGeometry, GlobalTrackingGeometryRecord> geometryToken_;
   edm::ESGetToken<Propagator,TrackingComponentsRecord>             propagator_;
@@ -214,20 +215,19 @@ private:
 
   void fillTrackInfo(const reco::Candidate&, const auto &, auto, auto, auto, const GeomDet*, const PixelClusterParameterEstimator*, std::vector<PSimHit>, const TrackerTopology* const);
 
-  const GeomDet* DetectorSelector(int ,const reco::Candidate& jet, GlobalVector,  const reco::Vertex& jetVertex, const TrackerTopology* const, const PixelClusterParameterEstimator*, const auto &);
+  const GeomDet* DetectorSelector(int ,const reco::Candidate& jet, GlobalVector,  const reco::Vertex& jetVertex, const GlobalTrackingGeometry* geometry_, const TrackerTopology* const, const PixelClusterParameterEstimator*, const auto &);
 
-  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex, int );
+  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const GlobalTrackingGeometry* geometry_, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex, int );
 
 
 };
 
 DeepCoreNtuplizer::DeepCoreNtuplizer(const edm::ParameterSet& iConfig) :
 	  magfield_(esConsumes<MagneticField, IdealMagneticFieldRecord>()),
-//	  geometry_(esConsumes<GlobalTrackingGeometry, GlobalTrackingGeometryRecord>()),
 	  geometryToken_(esConsumes<GlobalTrackingGeometry, GlobalTrackingGeometryRecord>()),
 	  propagator_(esConsumes<Propagator,TrackingComponentsRecord>()),
 
-	  parEstHandle(esConsumes<PixelClusterParameterEstimator, TkPixelCPERecord>()),
+	  parEstHandle(esConsumes(edm::ESInputTag("", iConfig.getParameter<std::string>("pixelCPE")))),
 	  tTopoHandle(esConsumes<TrackerTopology, TrackerTopologyRcd>()),
 
       vertices_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
@@ -331,9 +331,12 @@ void DeepCoreNtuplizer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
   //   }
   // }
 
+
 //  iSetup.get<IdealMagneticFieldRecord>().get( magfield_ );
 //  iSetup.get<GlobalTrackingGeometryRecord>().get(geometry_.);
-//  iSetup.get<TrackingComponentsRecord>().get( "AnalyticalPropagator", propagator_ ); //AnalyticalPropagator???
+//  iSetup.get<TrackingComponentsRecord>().get( "AnalyticalPropagator", propagator_ ); 
+  const GlobalTrackingGeometry* geometry_ = &iSetup.getData(geometryToken_);
+
 
   iEvent.getByToken(pixelClusters_, inputPixelClusters);
   allSiPixelClusters.clear(); siPixelDetsWithClusters.clear();
@@ -357,14 +360,12 @@ void DeepCoreNtuplizer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 //  const PixelClusterParameterEstimator* parEst;
 //  iSetup.get<TkPixelCPERecord>().get(pixelCPE_, parEstHandle);
 //  parEst = parEstHandle.product();
-  const PixelClusterParameterEstimator* parEst = &iSetup.getData(parEstHandle);  //pixelCPE_???
+  const PixelClusterParameterEstimator* parEst = &iSetup.getData(parEstHandle);  
   
 //  edm::ESHandle<TrackerTopology> tTopoHandle;
 //  iSetup.get<TrackerTopologyRcd>().get(tTopoHandle);
 //  const TrackerTopology* const tTopo = tTopoHandle.product();
   const TrackerTopology* tTopo = &iSetup.getData(tTopoHandle);
-
-  const GlobalTrackingGeometry* geometry_ = &iSetup.getData(geometryToken_);
 
 
   auto output = std::make_unique<edmNew::DetSetVector<SiPixelCluster>>();
@@ -382,10 +383,10 @@ void DeepCoreNtuplizer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
       GlobalVector jetDirection(jet.px(), jet.py(), jet.pz());
 
 
-      std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, parEst, jetVertex, 1);
+      std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, geometry_, tTopo, parEst, jetVertex, 1);
       edm::LogInfo("EventMonitor|seeding") << "number of cluster to split on lay1="<<splitClustDirSet.size() << "+jetDir" ;
       if(splitClustDirSet.size()==0) {
-        splitClustDirSet = splittedClusterDirections(jet, tTopo, parEst, jetVertex, 2);
+        splitClustDirSet = splittedClusterDirections(jet, geometry_, tTopo, parEst, jetVertex, 2);
         edm::LogInfo("EventMonitor|seeding") << "missing clusters on lay1, used lay2 to find directions, number of cluster=" << splitClustDirSet.size() << "+jetDir" << std::endl;
       }
       splitClustDirSet.push_back(jetDirection);
@@ -411,12 +412,12 @@ void DeepCoreNtuplizer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 
       edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt = inputPixelClusters->begin();
 
-      const GeomDet* globDet = DetectorSelector(2, jet, bigClustDir, jetVertex, tTopo,parEst, simtracksVector); //select detector mostly hitten by the jet
+      const GeomDet* globDet = DetectorSelector(2, jet, bigClustDir, jetVertex, geometry_,tTopo,parEst, simtracksVector); //select detector mostly hitten by the jet
 
       //fill the good det vector
       std::vector<const GeomDet*> goodDets;
       for(int l=1; l<Nlayer+1; l++){
-        const GeomDet* goodDet = DetectorSelector(l, jet, bigClustDir, jetVertex, tTopo,parEst, simtracksVector);
+        const GeomDet* goodDet = DetectorSelector(l, jet, bigClustDir, jetVertex, geometry_, tTopo,parEst, simtracksVector);
         goodDets.push_back(goodDet);
 
       }
@@ -424,7 +425,6 @@ void DeepCoreNtuplizer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
       for (; detIt != inputPixelClusters->end(); detIt++) { //loop deset
         const edmNew::DetSet<SiPixelCluster>& detset = *detIt;
         const GeomDet* det = geometry_->idToDet(detset.id()); 
-//        const GeomDet* det = geometry_.idToDet(detset.id()); 
 
         bool goodDetBool = false;
         for(int l=0; l<(int)goodDets.size(); l++){
@@ -451,12 +451,10 @@ void DeepCoreNtuplizer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
           auto localInter = det->specificSurface().toLocal((GlobalPoint)inter);
 
           LocalPoint cPos_local = parEst->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first;
-//          LocalPoint cPos_local = parEst->localParametersV(aCluster,(*geometry_.idToDetUnit(detIt->id())))[0].first;
 
            edm::LogInfo("EventMonitor|seeding").log([&](auto & logger){
               GlobalPoint pointVertex(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
               GlobalPoint cPos = det->surface().toGlobal(parEst->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first);
-//              GlobalPoint cPos = det->surface().toGlobal(parEst->localParametersV(aCluster,(*geometry_.idToDetUnit(detIt->id())))[0].first);
               // GlobalVector intersectionDir = (GlobalPoint) inter - pointVertex;
               // auto deltaR_glob = Geom::deltaR(bigClustDir, intersectionDir);
               GlobalVector clusterDir = cPos - pointVertex;
@@ -490,7 +488,6 @@ void DeepCoreNtuplizer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
       for (; shIt != simhitsALL.end(); shIt++) { //loop deset
         // const edmNew::DetSet<PSimHit>& detset = *shIt;
         const GeomDet* det = geometry_->idToDet((*shIt).detUnitId());
-//        const GeomDet* det = geometry_.idToDet((*shIt).detUnitId());
         if(det!=globDet) continue;
         std::pair<bool, Basic3DVector<float>> interPair = findIntersection(bigClustDir,(reco::Candidate::Point)jetVertex.position(), det);
         if(interPair.first==false) continue;
@@ -798,13 +795,11 @@ trackMap.clear();
 
     for (; shIt != simhits->end(); shIt++) { //loop on simit to find correspondent det (barrel)
       const GeomDet* det = geometry_->idToDet((*shIt).detUnitId());
-//      const GeomDet* det = geometry_.idToDet((*shIt).detUnitId());
       simhitsDetSet.insert(det);
     }
 
     for (; shItEC != simhitsEC->end(); shItEC++) { //loop on simit to find correspondent det (endCaps)
       const GeomDet* det = geometry_->idToDet((*shItEC).detUnitId());
-//      const GeomDet* det = geometry_.idToDet((*shItEC).detUnitId());
       simhitsDetSet.insert(det);
     }
 
@@ -846,7 +841,6 @@ std::vector<GlobalVector> DeepCoreNtuplizer::splittedClusterDirections(const rec
 
     const edmNew::DetSet<SiPixelCluster>& detset_int = *detIt_int;
     const GeomDet* det_int = geometry_->idToDet(detset_int.id());
-//    const GeomDet* det_int = geometry_.idToDet(detset_int.id());
     int lay = tTopo->layer(det_int->geographicalId());
     if(det_int->geographicalId().subdetId()==PixelSubdetector::PixelEndcap) lay=lay+4; //endcap layer counting = 5,6,7
     if(lay != layer) continue; //NB: saved bigclusetr on all the layers
@@ -854,7 +848,6 @@ std::vector<GlobalVector> DeepCoreNtuplizer::splittedClusterDirections(const rec
     for (auto cluster = detset_int.begin(); cluster != detset_int.end(); cluster++) {
       const SiPixelCluster& aCluster = *cluster;
       GlobalPoint cPos = det_int->surface().toGlobal(parEst->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt_int->id())))[0].first);
-//      GlobalPoint cPos = det_int->surface().toGlobal(parEst->localParametersV(aCluster,(*geometry_.idToDetUnit(detIt_int->id())))[0].first);
       GlobalPoint ppv(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
       GlobalVector clusterDir = cPos - ppv;
       GlobalVector jetDir(jet.px(), jet.py(), jet.pz());

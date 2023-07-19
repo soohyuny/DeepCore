@@ -22,7 +22,8 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) ) #-1 =
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root',' with the source file you want to use
     fileNames = cms.untracked.vstring(
-      'file:/uscms_data/d3/hichemb/princeton/project2/CMSSW_12_0_0_pre4/src/RecoTracker/DeepCoreTraining/test/Ntuplizer_step1_test.root'
+		'root://cms-xrd-global.cern.ch//store/group/phys_tracking/Soohyuny/DeepCoreNtuplizer/TT_TuneCP5_13p6TeV_powheg-pythia8/DeepCoreNtuplizerInput'
+#      'file:/uscms_data/d3/hichemb/princeton/project2/CMSSW_12_0_0_pre4/src/RecoTracker/DeepCoreTraining/test/Ntuplizer_step1_test.root'
       #'file:/eos/uscms/store/user/hichemb/RelValQCD_Pt_1800_2400_14/DeepCoreNtuplizerInput/211013_194728/0000/output/Ntuplizer_output1.root'
       ##  'file:/uscms_data/d3/hichemb/princeton/project2/CMSSW_12_0_0_pre4/src/RecoTracker/DeepCoreTraining/test/step3.root'
        ## 'root://cms-xrd-global.cern.ch//store/user/arizzi/TrainJetCore/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/TrainJetCoreAll/181026_130638/0005/step3_5435.root' #barrel example
